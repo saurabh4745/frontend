@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function PublishPage({ config, onDisconnect }) {
   const [name, setName] = useState('');
@@ -19,6 +19,11 @@ function PublishPage({ config, onDisconnect }) {
 
     try {
       const API_BASE = `http://${config.host}:5001`;
+      
+      // Add network check before making the request
+      const timeout = 5000; // 5 seconds timeout for local network
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       const response = await fetch(`${API_BASE}/api/publish`, {
         method: 'POST',
@@ -33,7 +38,10 @@ function PublishPage({ config, onDisconnect }) {
           topic: config.topic,
           message: name
         }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       const data = await response.json();
       
@@ -47,9 +55,18 @@ function PublishPage({ config, onDisconnect }) {
         }
       }
     } catch (err) {
+      // Improved error handling for local network issues
+      let errorMessage = 'Server error: ' + (err.message || 'Unknown error');
+      
+      if (err.name === 'AbortError') {
+        errorMessage = `Cannot reach server at ${config.host}:5001. Make sure both devices are connected to the same WiFi network.`;
+      } else if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+        errorMessage = `Network error connecting to ${config.host}:5001. Check if the server is running and accessible on the local network.`;
+      }
+      
       setStatus({
         type: 'error',
-        message: 'Server error: ' + (err.message || 'Unknown error')
+        message: errorMessage
       });
       setConnectionStatus('disconnected');
     } finally {
@@ -70,13 +87,22 @@ function PublishPage({ config, onDisconnect }) {
     
     try {
       const API_BASE = `http://${config.host}:5001`;
+      
+      // Add network check before making the request
+      const timeout = 5000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
       const response = await fetch(`${API_BASE}/api/test-connection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(config),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       const data = await response.json();
       
@@ -87,12 +113,28 @@ function PublishPage({ config, onDisconnect }) {
         setStatus({ type: 'error', message: data.message || 'Failed to reconnect' });
       }
     } catch (err) {
+      // Improved error handling for local network issues
+      let errorMessage = 'Server error: ' + (err.message || 'Unknown error');
+      
+      if (err.name === 'AbortError') {
+        errorMessage = `Cannot reach server at ${config.host}:5001. Make sure both devices are connected to the same WiFi network.`;
+      } else if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+        errorMessage = `Network error connecting to ${config.host}:5001. Check if the server is running and accessible on the local network.`;
+      }
+      
       setStatus({
         type: 'error',
-        message: 'Server error: ' + (err.message || 'Unknown error')
+        message: errorMessage
       });
     }
   };
+
+  // Add a component mount check to verify the connection on initial load
+  useEffect(() => {
+    // Optional: Uncomment this if you want to verify connection when the component mounts
+    // refreshConnection();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* Status icon in top right corner */}
