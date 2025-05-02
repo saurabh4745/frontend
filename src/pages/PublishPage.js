@@ -18,7 +18,7 @@ function PublishPage({ config, onDisconnect }) {
     setStatus('');
 
     try {
-      const API_BASE = 'http://localhost:5001';
+      const API_BASE = `http://${config.host}:5001`;
 
       const response = await fetch(`${API_BASE}/api/publish`, {
         method: 'POST',
@@ -69,7 +69,7 @@ function PublishPage({ config, onDisconnect }) {
     setStatus({ type: 'info', message: 'Testing connection...' });
     
     try {
-      const API_BASE = 'http://localhost:5001';
+      const API_BASE = `http://${config.host}:5001`;
       const response = await fetch(`${API_BASE}/api/test-connection`, {
         method: 'POST',
         headers: {

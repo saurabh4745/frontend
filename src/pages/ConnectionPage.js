@@ -27,8 +27,8 @@ function ConnectionPage({ onConnect, initialConfig }) {
     setError('');
 
     try {
-      const API_BASE ='http://localhost:5001';
-      ;
+      const API_BASE = `http://${config.host}:5001`;
+
       const response = await fetch(`${API_BASE}/api/test-connection`, {
         method: 'POST',
         headers: {
